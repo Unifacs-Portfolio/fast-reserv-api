@@ -3,8 +3,9 @@ import type { Reserva } from '../../entities/Reserva'
 
 export class InMemoryReservaRepository implements ReservaRepository {
 	public reservas: Reserva[] = []
-	async create(reserva: Reserva): Promise<void> {
+	async create(reserva: Reserva): Promise<Reserva> {
 		this.reservas.push(reserva)
+		return reserva
 	}
 	async findByMesaId(mesaId: number): Promise<Reserva | null> {
 		return this.reservas.find((reserva) => reserva.mesaId === mesaId) || null

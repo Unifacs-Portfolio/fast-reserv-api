@@ -21,7 +21,15 @@ export async function createTableMesa() {
 export async function createTableReserva() {
 	openDb().then((db) => {
 		db.exec(
-			'CREATE TABLE IF NOT EXISTS Reserva (id TEXT PRIMARY KEY NOT NULL , mesaId INTEGER,nomeResponsavel TEXT UNIQUE, quantidadePessoas INTEGER, data TEXT, hora TEXT, status TEXT,FOREIGN KEY (mesaId) REFERENCES Mesa(id))',
+			'CREATE TABLE IF NOT EXISTS Reserva (id TEXT PRIMARY KEY NOT NULL , mesaId INTEGER,nomeResponsavel TEXT UNIQUE, quantidadePessoas INTEGER, data TEXT, hora TEXT, verify_by TEXT NULL,status TEXT,FOREIGN KEY (mesaId) REFERENCES Mesa(id), FOREIGN KEY(verify_by) REFERENCES Garcon(nome))',
+		)
+	})
+}
+
+export async function createTableGarcon() {
+	openDb().then((db) => {
+		db.exec(
+			'CREATE TABLE IF NOT EXISTS Garcon (id INTEGER PRIMARY KEY NOT NULL, nome TEXT UNIQUE)',
 		)
 	})
 }
@@ -30,4 +38,5 @@ export async function createTableReserva() {
 export async function configuratedb() {
 	await createTableMesa()
 	await createTableReserva()
+	await createTableGarcon()
 }

@@ -10,6 +10,7 @@ interface CriarReservaRequest {
 	hora: string
 	quantidadePessoas: number
 	status?: StatusReserva
+	verify_by?: string
 }
 
 interface CriarReservaResponse {
@@ -30,6 +31,7 @@ export class CriarReservaUseCase {
 		hora,
 		quantidadePessoas,
 		status,
+		verify_by,
 	}: CriarReservaRequest): Promise<CriarReservaResponse> {
 		const reservaExistente = await this.reservaRepository.findByMesaId(mesaId)
 
@@ -45,6 +47,7 @@ export class CriarReservaUseCase {
 				hora,
 				quantidadePessoas,
 				status,
+				verify_by,
 			}),
 		)
 		const reserva = await this.reservaRepository.findByMesaId(mesaId)

@@ -1,9 +1,10 @@
-import { configuratedb } from './Datenbank/configdb'
 import express from 'express'
-import { atendenteRouter } from './http/controllers/atendente/atendente.route'
 import type { ErrorRequestHandler } from 'express'
 import { ZodError } from 'zod'
+import { configuratedb } from './Datenbank/configdb'
 import { env } from './env'
+import { atendenteRouter } from './http/controllers/atendente/atendente.route'
+import { garcomRouter } from './http/controllers/garcom/garcom.route'
 import path from 'node:path'
 
 const app = express()
@@ -13,6 +14,7 @@ app.use(express.static(path.join(process.cwd(), 'frontend/public')))
 
 configuratedb()
 app.use('/api', atendenteRouter)
+app.use('/api', garcomRouter)
 app.use(<ErrorRequestHandler>((err, _req, res, next) => {
 	if (err instanceof ZodError) {
 		res.status(400).json({ message: 'Validação falhou', issues: err.format() })

@@ -13,4 +13,8 @@ export class InMemoryCriarReservaRepository implements ReservaRepository {
 		const reserva = this.reservas.find((r) => r.mesaId === mesaId)
 		return reserva || null
 	}
+
+	async delete(mesaId: number): Promise<void> {
+		throw new Error('Method not implemented.')
+	}
 }
