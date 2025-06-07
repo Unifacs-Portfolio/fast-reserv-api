@@ -1,116 +1,142 @@
-import { Database } from 'sqlite3'
+import type { Database } from 'sqlite'
 import { Reserva } from '../../entities/Reserva'
-import { env } from '../../env'
 import { isReserva } from '../../utils/isReserva'
 import type { ReservaRepository } from '../ReservaRepository'
+import { getConnection } from '../../Datenbank/configdb'
 
 export class SqliteReservaRepository implements ReservaRepository {
 	private db: Database
 	constructor() {
-		this.db = new Database(env.PATH_TO_DB, (err) => {
-			if (err) {
-				throw new Error(`Erro ao conectar ao banco de dados: ${err.message}`)
-			}
-		})
+		this.db = getConnection()
 	}
 	async create(reserva: Reserva): Promise<Reserva> {
-		return new Promise((resolve, reject) => {
-			this.db.run(
-				'INSERT INTO Reserva (id, mesaId, nomeResponsavel, data, hora, quantidadePessoas, status, verify_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-				[
-					reserva.id,
-					reserva.mesaId,
-					reserva.nomeResponsavel,
-					reserva.data,
-					reserva.hora,
-					reserva.quantidadePessoas,
-					reserva.status,
-					reserva.verify_by,
-				],
-				(err) => {
-					if (err) {
-						reject(new Error(`Erro ao criar reserva: ${err.message}`))
-						return
-					}
-					this.db.get(
-						'SELECT * FROM Reserva WHERE id = ?',
-						[reserva.id],
-						(err, row) => {
-							if (err) {
-								reject(new Error(`Erro ao buscar reserva: ${err.message}`))
-								return
-							}
-							if (!row) {
-								reject(new Error('Reserva não encontrada após inserção.'))
-								return
-							}
-							if (isReserva(row)) {
-								resolve(
-									new Reserva({
-										id: row.id,
-										mesaId: row.mesaId,
-										nomeResponsavel: row.nomeResponsavel,
-										data: row.data,
-										hora: row.hora,
-										quantidadePessoas: row.quantidadePessoas,
-										status: row.status,
-										verify_by: row.verify_by,
-									}),
-								)
-								return
-							}
-							reject(new Error('Dados da reserva inválidos.'))
-						},
-					)
-				},
-			)
-		})
+		await this.db.run(
+			'INSERT INTO Reserva (id, mesaId, nomeResponsavel, data, hora, quantidadePessoas, status, verify_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+			[
+				reserva.id,
+				reserva.mesaId,
+				reserva.nomeResponsavel,
+				reserva.data,
+				reserva.hora,
+				reserva.quantidadePessoas,
+				reserva.status,
+				reserva.verify_by,
+			],
+		)
+		const reservaCriada = await this.db.get(
+			'SELECT * FROM Reserva WHERE id = ?',
+			[reserva.id],
+		)
+		if (!reservaCriada) {
+			throw new Error('Reserva criada, mas não encontrada.')
+		}
+		if (isReserva(reservaCriada)) {
+			return new Reserva({
+				id: reservaCriada.id,
+				mesaId: reservaCriada.mesaId,
+				nomeResponsavel: reservaCriada.nomeResponsavel,
+				data: reservaCriada.data,
+				hora: reservaCriada.hora,
+				quantidadePessoas: reservaCriada.quantidadePessoas,
+				status: reservaCriada.status,
+				verify_by: reservaCriada.verify_by,
+			})
+		}
+		throw new Error('Dados da reserva inválidos.')
 	}
 
 	async findByMesaId(mesaId: number): Promise<Reserva | null> {
-		return new Promise((resolve, reject) => {
-			this.db.get(
-				'SELECT * FROM Reserva WHERE mesaId = ?',
-				[mesaId],
-				(err, row) => {
-					if (err) {
-						reject(new Error(`Erro ao buscar reserva: ${err.message}`))
-						return
-					}
-					if (!row) {
-						resolve(null)
-						return
-					}
-					if (isReserva(row)) {
-						resolve(
-							new Reserva({
-								id: row.id,
-								mesaId: row.mesaId,
-								nomeResponsavel: row.nomeResponsavel,
-								data: row.data,
-								hora: row.hora,
-								quantidadePessoas: row.quantidadePessoas,
-								status: row.status,
-								verify_by: row.verify_by,
-							}),
-						)
-						return
-					}
-					reject(new Error('Dados da reserva inválidos.'))
-				},
-			)
-		})
+		const reserva = await this.db.get(
+			'SELECT * FROM Reserva WHERE mesaId = ?',
+			[mesaId],
+		)
+		if (!reserva) {
+			return null
+		}
+		if (isReserva(reserva)) {
+			return new Reserva({
+				id: reserva.id,
+				mesaId: reserva.mesaId,
+				nomeResponsavel: reserva.nomeResponsavel,
+				data: reserva.data,
+				hora: reserva.hora,
+				quantidadePessoas: reserva.quantidadePessoas,
+				status: reserva.status,
+				verify_by: reserva.verify_by,
+			})
+		}
+		throw new Error('Dados da reserva inválidos.')
 	}
 
-	async delete(mesaId: number): Promise<void> {
-		return new Promise((resolve, reject) => {
-			this.db.run('DELETE FROM Reserva WHERE mesaId = ?', [mesaId], (err) => {
-				if (err) {
-					reject(new Error(`Erro ao deletar reserva: ${err.message}`))
-				} else {
-					resolve()
-				}
+	async findById(id: string): Promise<Reserva | null> {
+		const reserva = await this.db.get('SELECT * FROM Reserva WHERE Id = ?', [
+			id,
+		])
+		if (!reserva) {
+			return null
+		}
+		if (isReserva(reserva)) {
+			return new Reserva({
+				id: reserva.id,
+				mesaId: reserva.mesaId,
+				nomeResponsavel: reserva.nomeResponsavel,
+				data: reserva.data,
+				hora: reserva.hora,
+				quantidadePessoas: reserva.quantidadePessoas,
+				status: reserva.status,
+				verify_by: reserva.verify_by,
 			})
-		})
+		}
+		throw new Error('Dados da reserva inválidos.')
+	}
+
+	async update(id: string, reserva: Reserva): Promise<Reserva> {
+		const updates: string[] = []
+		const values: (string | null)[] = []
+
+		if (reserva.status !== undefined) {
+			updates.push('status = ?')
+			values.push(reserva.status)
+		}
+
+		if (reserva.verify_by !== undefined) {
+			updates.push('verify_by = ?')
+			values.push(reserva.verify_by)
+		}
+
+		if (updates.length === 0) {
+			throw new Error('Nenhum campo fornecido para atualização.')
+		}
+
+		values.push(id) // id da reserva
+
+		const sql = `UPDATE Reserva SET ${updates.join(', ')} WHERE id = ?`
+
+		const reservaResultado = await this.db.run(sql, values)
+		if (reservaResultado.changes === 0) {
+			throw new Error(
+				'Erro ao atualizar reserva. Verifique se a reserva existe.',
+			)
+		}
+		if (reservaResultado.changes === 0) {
+			throw new Error(
+				'Erro ao atualizar reserva. Verifique se a reserva existe.',
+			)
+		}
+		const reservaAtualizada = await this.findById(id)
+		if (isReserva(reservaAtualizada)) {
+			return new Reserva({
+				id: reservaAtualizada.id,
+				mesaId: reservaAtualizada.mesaId,
+				nomeResponsavel: reservaAtualizada.nomeResponsavel,
+				data: reservaAtualizada.data,
+				hora: reservaAtualizada.hora,
+				quantidadePessoas: reservaAtualizada.quantidadePessoas,
+				status: reservaAtualizada.status,
+				verify_by: reservaAtualizada.verify_by,
+			})
+		}
+		console.error('Erro ao atualizar reserva:', reservaAtualizada)
+		throw new Error('Dados da reserva inválidos.')
 	}
 }

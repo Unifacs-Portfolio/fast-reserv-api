@@ -16,7 +16,7 @@ if (!success) {
 	throw new Error('Invalid environment variables')
 }
 if (data.NODE_ENV === 'test') {
-	data.PATH_TO_DB = generateDatabasePath(data.PATH_TO_DB)
+	data.PATH_TO_DB = generateDatabasePath()
 }
 
 export const env = data
